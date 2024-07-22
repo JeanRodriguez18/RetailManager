@@ -17,8 +17,11 @@ namespace RMDataManager
             GlobalConfiguration.Configuration
                 .EnableSwagger(c =>
                     {
+                        //This adds a new document API in swagger 
                         c.DocumentFilter<AuthTokenOperation>();
+                        //This adds the access token parameter in all requests 
                         c.OperationFilter<AuthorizacionOperationFilter>();
+
                         // By default, the service root url is inferred from the request used to access the docs.
                         // However, there may be situations (e.g. proxy and load-balanced environments) where this does not
                         // resolve correctly. You can workaround this by providing your own code to determine the root URL.
