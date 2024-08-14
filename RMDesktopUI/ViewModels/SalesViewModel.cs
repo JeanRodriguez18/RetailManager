@@ -1,7 +1,9 @@
-﻿using Caliburn.Micro;
+﻿using AutoMapper;
+using Caliburn.Micro;
 using RMDesktopUI.Library.Api;
 using RMDesktopUI.Library.Helpers;
 using RMDesktopUI.Library.Models;
+using RMDesktopUI.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,11 +18,13 @@ namespace RMDesktopUI.ViewModels
         IProductEndpoint _productEndPoint;
         IConfigHelper _configHelper;
         ISaleEndpoint _saleEndpoint;
-        public SalesViewModel(IProductEndpoint productEndpoint, IConfigHelper configHelper, ISaleEndpoint saleEndpoint)
+        IMapper _mapper;
+        public SalesViewModel(IProductEndpoint productEndpoint, IConfigHelper configHelper, ISaleEndpoint saleEndpoint, IMapper mapper)
         {
             _productEndPoint = productEndpoint;
             _saleEndpoint = saleEndpoint;
             _configHelper = configHelper;
+            _mapper = mapper;
         }
 
         protected override async void OnViewLoaded(object view)
@@ -32,12 +36,13 @@ namespace RMDesktopUI.ViewModels
         private async Task LoadProducts()
         {
             var productsList = await _productEndPoint.GetAll();
-            Products = new BindingList<ProductModel>(productsList);
+            var products = _mapper.Map<List<ProductDisplayModel>>(productsList);
+            Products = new BindingList<ProductDisplayModel>(products);
         }
 
-        private BindingList<ProductModel> _products;
+        private BindingList<ProductDisplayModel> _products;
 
-		public BindingList<ProductModel> Products
+		public BindingList<ProductDisplayModel> Products
 		{
 			get { return _products; }
 			set 
@@ -47,9 +52,9 @@ namespace RMDesktopUI.ViewModels
 			}
 		}
 
-        private ProductModel _selectedProducts;
+        private ProductDisplayModel _selectedProducts;
 
-        public ProductModel SelectedProducts
+        public ProductDisplayModel SelectedProducts
         {
             get { return _selectedProducts; }
             set 
@@ -61,9 +66,9 @@ namespace RMDesktopUI.ViewModels
         }
 
 
-        private BindingList<CartItemModel> _cart = new BindingList<CartItemModel>();
+        private BindingList<CartItemDisplayModel> _cart = new BindingList<CartItemDisplayModel>();
 
-		public BindingList<CartItemModel> Cart
+		public BindingList<CartItemDisplayModel> Cart
 		{
 			get { return _cart; }
 			set 
@@ -161,7 +166,7 @@ namespace RMDesktopUI.ViewModels
         public void AddToCart()
 		{
 
-            CartItemModel existingItem = Cart.FirstOrDefault(x=> x.Product == SelectedProducts);
+            CartItemDisplayModel existingItem = Cart.FirstOrDefault(x=> x.Product == SelectedProducts);
 
             if (existingItem != null)
             {
@@ -172,7 +177,7 @@ namespace RMDesktopUI.ViewModels
             }
             else
             {
-                CartItemModel item = new CartItemModel
+                CartItemDisplayModel item = new CartItemDisplayModel
                 {
                     Product = SelectedProducts,
                     QuantityInCart = ItemQuantity
@@ -185,6 +190,7 @@ namespace RMDesktopUI.ViewModels
             NotifyOfPropertyChange(() => Tax);
             NotifyOfPropertyChange(() => Total);
             NotifyOfPropertyChange(() => CanCheckOut);
+
 
         }
 
