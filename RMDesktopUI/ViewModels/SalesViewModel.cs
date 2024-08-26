@@ -184,8 +184,8 @@ namespace RMDesktopUI.ViewModels
             {
                 existingItem.QuantityInCart += ItemQuantity;
                 //Hack - there should be a better way of refreshing the cart display
-                Cart.Remove(existingItem);
-                Cart.Add(existingItem);
+                /*Cart.Remove(existingItem);
+                Cart.Add(existingItem);*/
             }
             else
             {

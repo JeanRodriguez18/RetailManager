@@ -35,7 +35,7 @@ namespace RMDesktopUI.Models
         public event PropertyChangedEventHandler PropertyChanged;
         public void CallPropertyChanged(string propertyName)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(propertyName)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
