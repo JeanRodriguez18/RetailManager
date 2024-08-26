@@ -28,7 +28,7 @@
         </TextBlock>
 
         <TextBlock x:Name="ErrorMessage" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0 0 0 20" 
-                   Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=collapsed}" Foreground="Red"
+                   Visibility="{Binding IsLoggedUser, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=collapsed}" Foreground="Red"
                    MaxWidth="300" TextWrapping="Wrap"/>
 
         <!-- user name row -->
