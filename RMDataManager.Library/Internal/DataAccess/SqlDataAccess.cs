@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -56,6 +57,8 @@ namespace RMDataManager.Library.Internal.DataAccess
             _connection.Open();
 
             _transaction = _connection.BeginTransaction();
+
+            isClosed = false;
         }
 
         public void SaveDataInTransaction<T>(string storedProcedure, T parameters)
@@ -70,32 +73,41 @@ namespace RMDataManager.Library.Internal.DataAccess
             return rows;
         }
 
+        private bool isClosed = false;
+
         public void CommitTransaction()
         {
             _transaction?.Commit();
             _connection?.Close();
+
+            isClosed = true;
         }
 
         public void RollBackTransaction()
         {
             _transaction?.Rollback();
             _connection?.Close();
+
+            isClosed = true;
+
         }
 
         public void Dispose()
         {
-            CommitTransaction();
+            if (isClosed == false)
+            {
+                try
+                {
+                    CommitTransaction();
+                }
+                catch (Exception)
+                {
+                    //TODO - Log this issue
+                }
+            }
+
+            _transaction = null;
+            _transaction = null;
         }
-
-
-        // Open connection/transacion method
-        // load using the transaction
-        // save using the transaction
-        // close connection/stop transaction method
-        // Dispose
-
-
-
-
     }
 }
