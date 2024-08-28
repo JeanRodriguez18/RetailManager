@@ -44,6 +44,7 @@ namespace RMDataManager.Library.DataAccess
 
                 details.Add(detail);
             }
+
             // Create the sale model
             SaleDBModel sale = new SaleDBModel()
             {
@@ -51,19 +52,42 @@ namespace RMDataManager.Library.DataAccess
                 Tax = details.Sum(x=> x.Tax),
                 CashierId = cashierId
             };
+
             sale.Total = sale.SubTotal + sale.Tax;
-            //Save the sale model
-            SqlDataAccess sql = new SqlDataAccess();
-            sql.SaveData("dbo.spSale_Insert", sale, "RMData");
-            // Get the ID from the sale model
-            sale.Id = sql.LoadData<int, dynamic>("spSale_Lookup", new { CashierId = sale.CashierId, SaleDate = sale.SaleDate }, "RMData").FirstOrDefault();
-            // Finish filling in the sale detail models
-            foreach (var item in details)
+            
+            
+
+            using(SqlDataAccess sql = new SqlDataAccess())
             {
-                item.SaleId = sale.Id;
-                // Save the sale details models
-                sql.SaveData("dbo.spSaleDetail_Insert", item, "RMData");
+                try
+                {
+                    sql.StartTransaction("RMData");
+
+                    //Save the sale model
+                    sql.SaveDataInTransaction("dbo.spSale_Insert", sale);
+
+                    // Get the ID from the sale model
+                    sale.Id = sql.LoadDataInTransaction<int, dynamic>("spSale_Lookup", new { CashierId = sale.CashierId, SaleDate = sale.SaleDate }).FirstOrDefault();
+
+                    // Finish filling in the sale detail models
+                    foreach (var item in details)
+                    {
+                        item.SaleId = sale.Id;
+                        // Save the sale details models
+                        sql.SaveDataInTransaction("dbo.spSaleDetail_Insert", item);
+                    }
+
+
+                    sql.CommitTransaction();
+                }
+                catch (Exception ex)
+                {
+                    sql.RollBackTransaction();
+                    throw;
+                }
             }
+
+            
            
         }
 
