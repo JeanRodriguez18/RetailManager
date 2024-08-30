@@ -83,8 +83,8 @@ namespace RMDesktopUI.ViewModels
 			set 
 			{
 				_errorMessage = value; 
-                NotifyOfPropertyChange(() => IsErrorVisible);
                 NotifyOfPropertyChange(() => ErrorMessage);
+                NotifyOfPropertyChange(() => IsErrorVisible);
 			}
 		}
 

@@ -35,7 +35,7 @@ namespace RMDesktopUI.ViewModels
             TryClose();
         }
 
-        private bool IsLoggedIn
+        public bool IsLoggedIn
         {
             get
             {
