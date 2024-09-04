@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -13,9 +14,15 @@ namespace RMDataManager.Library.Internal.DataAccess
 {
     internal class SqlDataAccess : IDisposable
     {
+
+        public SqlDataAccess(IConfiguration config)
+        {
+            _config = config;
+        }
+
         public string GetConnectionString(string connectionStringName)
         {
-            return ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
+            return _config.GetConnectionString(connectionStringName);
         }
 
 
@@ -74,6 +81,7 @@ namespace RMDataManager.Library.Internal.DataAccess
         }
 
         private bool isClosed = false;
+        private readonly IConfiguration _config;
 
         public void CommitTransaction()
         {
