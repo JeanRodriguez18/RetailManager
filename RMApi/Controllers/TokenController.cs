@@ -9,6 +9,8 @@ using System;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Configuration;
+using System.Configuration;
 
 namespace RMApi.Controllers
 {
@@ -16,11 +18,13 @@ namespace RMApi.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly IConfiguration _config;
 
-        public TokenController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public TokenController(ApplicationDbContext context, UserManager<IdentityUser> userManager, IConfiguration config)
         {
             _context = context;
             _userManager = userManager;
+            _config = config;
         }
 
         [Route("/token")]
@@ -69,7 +73,7 @@ namespace RMApi.Controllers
             var token = new JwtSecurityToken(
                 new JwtHeader(
                     new SigningCredentials(
-                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes("MySecretKeyIsSecretSoDoNotTellKeepItSecret")), 
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetValue<string>("Secrets:SecurityKey"))), 
                         SecurityAlgorithms.HmacSha256)), 
                 new JwtPayload(claims)
             );
