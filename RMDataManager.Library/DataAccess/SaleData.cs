@@ -9,25 +9,26 @@ using System.Threading.Tasks;
 
 namespace RMDataManager.Library.DataAccess
 {
-    public class SaleData
+    public class SaleData : ISaleData
     {
-        private readonly IConfiguration _config;
+        private readonly IProductData _productData;
+        private readonly ISqlDataAccess _sql;
 
-        public SaleData(IConfiguration config)
+        public SaleData(IProductData productData, ISqlDataAccess sql)
         {
-            _config = config;
+            _productData = productData;
+            _sql = sql;
         }
         public void SaveSale(SaleModel saleInfo, string cashierId)
         {
             // TODO: Make this SOLID/DRY/BETTER
             // Start filling in the models we will save to the database
             List<SaleDetailDBModel> details = new List<SaleDetailDBModel>();
-            ProductData products = new ProductData(_config);
             decimal taxRate = ConfigHelper.GetTaxRate() / 100;
 
             foreach (var item in saleInfo.SaleDetails)
             {
-                
+
                 var detail = new SaleDetailDBModel
                 {
                     ProductId = item.ProductId,
@@ -35,8 +36,8 @@ namespace RMDataManager.Library.DataAccess
                 };
 
                 //Get the information about this product
-                var productInfo = products.GetProductById(detail.ProductId);
-                
+                var productInfo = _productData.GetProductById(detail.ProductId);
+
                 if (productInfo == null)
                 {
                     throw new Exception($"The product id of {item.ProductId} could not be found in the database.");
@@ -54,43 +55,41 @@ namespace RMDataManager.Library.DataAccess
             // Create the sale model
             SaleDBModel sale = new SaleDBModel()
             {
-                SubTotal = details.Sum(x=> x.PurchasePrice),
-                Tax = details.Sum(x=> x.Tax),
+                SubTotal = details.Sum(x => x.PurchasePrice),
+                Tax = details.Sum(x => x.Tax),
                 CashierId = cashierId
             };
 
             sale.Total = sale.SubTotal + sale.Tax;
-            
-            
 
-            using(SqlDataAccess sql = new SqlDataAccess(_config))
+
+
+
+            try
             {
-                try
+                _sql.StartTransaction("RMData");
+
+                //Save the sale model
+                _sql.SaveDataInTransaction("dbo.spSale_Insert", sale);
+
+                // Get the ID from the sale model
+                sale.Id = _sql.LoadDataInTransaction<int, dynamic>("spSale_Lookup", new { CashierId = sale.CashierId, SaleDate = sale.SaleDate }).FirstOrDefault();
+
+                // Finish filling in the sale detail models
+                foreach (var item in details)
                 {
-                    sql.StartTransaction("RMData");
-
-                    //Save the sale model
-                    sql.SaveDataInTransaction("dbo.spSale_Insert", sale);
-
-                    // Get the ID from the sale model
-                    sale.Id = sql.LoadDataInTransaction<int, dynamic>("spSale_Lookup", new { CashierId = sale.CashierId, SaleDate = sale.SaleDate }).FirstOrDefault();
-
-                    // Finish filling in the sale detail models
-                    foreach (var item in details)
-                    {
-                        item.SaleId = sale.Id;
-                        // Save the sale details models
-                        sql.SaveDataInTransaction("dbo.spSaleDetail_Insert", item);
-                    }
-
-
-                    sql.CommitTransaction();
+                    item.SaleId = sale.Id;
+                    // Save the sale details models
+                    _sql.SaveDataInTransaction("dbo.spSaleDetail_Insert", item);
                 }
-                catch (Exception ex)
-                {
-                    sql.RollBackTransaction();
-                    throw;
-                }
+
+
+                _sql.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _sql.RollBackTransaction();
+                throw;
             }
 
         }
@@ -98,9 +97,7 @@ namespace RMDataManager.Library.DataAccess
         public List<SaleReportModel> GetSalesReport()
         {
 
-            SqlDataAccess sql = new SqlDataAccess(_config);
-
-            var output = sql.LoadData<SaleReportModel, dynamic>("dbo.spSale_SaleReport", new { }, "RMData");
+            var output = _sql.LoadData<SaleReportModel, dynamic>("dbo.spSale_SaleReport", new { }, "RMData");
 
             return output;
 
